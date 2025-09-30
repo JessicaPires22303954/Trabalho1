@@ -1,0 +1,9 @@
+#ifndef MLFQ_H
+#define MLFQ_H
+
+#include <stdint.h>
+#include "queue.h" /* para queue_t e pcb_t */
+
+void mlfq_scheduler(uint32_t current_time_ms, queue_t *rq, pcb_t **cpu_task);
+
+#endif /* MLFQ_H */

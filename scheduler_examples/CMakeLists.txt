@@ -9,6 +9,7 @@ add_executable(scheduler
         fifo.c
         sjf.c
         rr.c
+        mlfq.c
 )
 
 add_executable(app app.c)
