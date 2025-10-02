@@ -11,6 +11,7 @@ Link do repositório: https://github.com/JessicaPires22303954/Trabalho1
 | C         | Tempo Execução | 44.980 | 45.000 | 44.990 | 44.990 |
 | C         | Tempo Resposta | 24.980 | 25.000 | 24.990 | 24.990 |
 
+
 Tabela Resumo
 
 | Cenário | Métrica (segs)       | FIFO   | SJF    | RR     | MLFQ   |
