@@ -11,6 +11,8 @@
 #define MLFQ_QUANTUM_MS 500
 
 /* metadata para cada PCB que o MLFQ controla */
+/*Estrutura que guarda informações extras por processo (nível atual e quanto já consumiu do quantum).
+Ligada numa lista meta_head.*/
 typedef struct mlfq_meta {
     pcb_t *pcb;
     int level;                  /* 0 .. MLFQ_LEVELS-1 (0 = highest) */
@@ -19,11 +21,15 @@ typedef struct mlfq_meta {
 } mlfq_meta_t;
 
 /* filas internas do MLFQ (uma queue_t por nível) */
+/*Uma fila por nível de prioridade (mlfq_queues).
+Lista ligada com todos os metadados (meta_head).
+initialized garante que a estrutura só é inicializada uma vez.*/
 static queue_t mlfq_queues[MLFQ_LEVELS];
 static mlfq_meta_t *meta_head = NULL;
 static int initialized = 0;
 
 /* --- Helpers meta --- */
+/*Procura o metadado de um processo (pcb) na lista.*/
 static mlfq_meta_t *find_meta(pcb_t *p) {
     mlfq_meta_t *m = meta_head;
     while (m) {
@@ -32,7 +38,7 @@ static mlfq_meta_t *find_meta(pcb_t *p) {
     }
     return NULL;
 }
-
+/*Cria um novo metadado para p e insere no início da lista.*/
 static void add_meta(pcb_t *p, int level) {
     mlfq_meta_t *m = malloc(sizeof(mlfq_meta_t));
     if (!m) return;
@@ -42,7 +48,7 @@ static void add_meta(pcb_t *p, int level) {
     m->next = meta_head;
     meta_head = m;
 }
-
+/*Remove o metadado associado a p (quando processo termina).*/
 static void remove_meta(pcb_t *p) {
     mlfq_meta_t **prev = &meta_head;
     mlfq_meta_t *cur = meta_head;
@@ -58,6 +64,8 @@ static void remove_meta(pcb_t *p) {
 }
 
 /* inicializa as filas internas (uma vez) */
+/*Garante que todas as filas internas começam vazias.
+Só é chamado uma vez no início.*/
 static void mlfq_init(void) {
     if (initialized) return;
     for (int i = 0; i < MLFQ_LEVELS; ++i) {
@@ -73,6 +81,9 @@ static void mlfq_init(void) {
  * Se já existir metadata para esse PCB, mantém o nível guardado (útil quando
  * um processo volta do BLOCK).
  */
+/*Pega todos os processos da fila global (rq) e coloca-os no MLFQ interno.
+Novos processos começam sempre no nível 0.
+Processos que estavam bloqueados regressam ao nível que tinham antes.*/
 static void absorb_ready_queue(queue_t *rq) {
     pcb_t *p;
     while ((p = dequeue_pcb(rq)) != NULL) {
@@ -111,6 +122,8 @@ void mlfq_scheduler(uint32_t current_time_ms, queue_t *rq, pcb_t **cpu_task) {
     absorb_ready_queue(rq);
 
     /* 2) Actualiza tarefa corrente (se existir) */
+    /*Se há processo a correr, incrementa o tempo decorrido e o quantum usado.
+     *Garante que existe metadado para o processo (caso excecional).*/
     if (*cpu_task) {
         mlfq_meta_t *m = find_meta(*cpu_task);
         if (!m) {
@@ -122,7 +135,9 @@ void mlfq_scheduler(uint32_t current_time_ms, queue_t *rq, pcb_t **cpu_task) {
         (*cpu_task)->ellapsed_time_ms += TICKS_MS;
         m->quantum_used_ms += TICKS_MS;
 
-        /* terminou? */
+        /*Envia mensagem DONE.
+         *Remove metadado e liberta memória.
+         *CPU fica livre.*/
         if ((*cpu_task)->ellapsed_time_ms >= (*cpu_task)->time_ms) {
             /* envia DONE para a aplicação */
             msg_t msg = {
@@ -137,18 +152,24 @@ void mlfq_scheduler(uint32_t current_time_ms, queue_t *rq, pcb_t **cpu_task) {
             remove_meta(*cpu_task);
             free(*cpu_task);
             *cpu_task = NULL;
+            /*Se acabou o quantum, o processo é rebaixado (até ao último nível) e volta para a fila.
+             *CPU fica livre.*/
         } else if (m->quantum_used_ms >= MLFQ_QUANTUM_MS) {
             /* quantum esgotado -> desce nível (se possível) e re-enfileira */
             if (m->level < MLFQ_LEVELS - 1) m->level++;
             m->quantum_used_ms = 0;
             enqueue_pcb(&mlfq_queues[m->level], *cpu_task);
             *cpu_task = NULL;
+            /*processo permanece na CPU.*/
         } else {
             /* ainda dentro do quantum -> continua a correr */
         }
     }
 
     /* 3) Se CPU livre, escolhe da fila de maior prioridade disponível */
+    /*Se CPU está livre, percorre as filas por prioridade (0 → 2).
+     *Escolhe o primeiro processo disponível.
+     *Garante que tem metadado associado.*/
     if (*cpu_task == NULL) {
         for (int lvl = 0; lvl < MLFQ_LEVELS; ++lvl) {
             pcb_t *next = dequeue_pcb(&mlfq_queues[lvl]);

@@ -35,6 +35,8 @@ void sjf_scheduler(uint32_t current_time_ms, queue_t *rq, pcb_t **cpu_task) {
     }
 
     /* Se CPU está livre, escolhe o processo de menor tempo remanescente */
+    /*Cria um array dinâmico para armazenar os processos retirados da ready queue.
+     *Esse array cresce com realloc se necessário.*/
     if (*cpu_task == NULL) {
         pcb_t *p = NULL;
         size_t cap = 16, n = 0;
@@ -47,6 +49,9 @@ void sjf_scheduler(uint32_t current_time_ms, queue_t *rq, pcb_t **cpu_task) {
         pcb_t *min_pcb = NULL;
 
         /* Esvazia a ready queue para um array dinâmico, encontrando o mínimo */
+        /*Retira todos os processos da fila, guardando no array.
+         *Calcula o tempo restante de cada processo.
+         *Mantém referência ao processo com menor tempo restante (min_pcb)*/
         while ((p = dequeue_pcb(rq)) != NULL) {
             if (n == cap) {
                 cap *= 2;
@@ -74,6 +79,8 @@ void sjf_scheduler(uint32_t current_time_ms, queue_t *rq, pcb_t **cpu_task) {
         }
 
         /* Se encontramos um processo mínimo, re-enfila os restantes e atribui CPU */
+        /*Recoloca todos os processos menos o escolhido de volta na fila.
+         *O processo escolhido é colocado na CPU (*cpu_task = min_pcb).*/
         if (min_pcb) {
             for (size_t i = 0; i < n; ++i) {
                 if (arr[i] == min_pcb) continue;
@@ -82,6 +89,6 @@ void sjf_scheduler(uint32_t current_time_ms, queue_t *rq, pcb_t **cpu_task) {
             *cpu_task = min_pcb;
         }
 
-        free(arr);
+        free(arr); //Libertação da memória auxiliar
     }
 }

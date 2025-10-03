@@ -23,6 +23,10 @@ void rr_scheduler(uint32_t current_time_ms, queue_t *rq, pcb_t **cpu_task) {
         (*cpu_task)->ellapsed_time_ms += TICKS_MS;
         quantum_used_ms += TICKS_MS;
 
+        /*Envia mensagem PROCESS_REQUEST_DONE ao cliente.
+        *Libera memória do processo.
+        *Libera CPU.
+        *Reseta quantum usado.*/
         if ((*cpu_task)->ellapsed_time_ms >= (*cpu_task)->time_ms) {
             // Tarefa terminou
             msg_t msg = {
@@ -30,12 +34,17 @@ void rr_scheduler(uint32_t current_time_ms, queue_t *rq, pcb_t **cpu_task) {
                 .request = PROCESS_REQUEST_DONE,
                 .time_ms = current_time_ms
             };
+
             if (write((*cpu_task)->sockfd, &msg, sizeof(msg_t)) != sizeof(msg_t)) {
                 perror("write");
             }
             free(*cpu_task);
             *cpu_task = NULL;
             quantum_used_ms = 0;
+
+            /*Preempção: processo volta para o fim da fila.
+            Libera CPU.
+            Quantum reinicia.*/
         } else if (quantum_used_ms >= RR_QUANTUM_MS) {
             // Quantum esgotado → re-enfileira a tarefa
             enqueue_pcb(rq, *cpu_task);
