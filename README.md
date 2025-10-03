@@ -23,9 +23,9 @@ Tabela Resumo
 | 3       | Tempo Médio Execução | 28.323 | 26.667 | 28.330 | 37.993 |
 | 3       | Tempo Médio Resposta | 13.323 | 11.667 | 13.330 | 22.993 |
 
-No cenário 1, todos os algoritmos apresentaram resultados muito semelhantes, com tempos médios de execução em torno dos 26,6 segundos e tempos médios de resposta próximos de 11,6 segundos.
-Isto deve-se ao facto de as tarefas terem durações semelhantes e chegarem praticamente em simultâneo, não existindo grande diferença entre executar por ordem de chegada (FIFO), escolher o mais curto primeiro (SJF), alternar com um intervalo de tempo fixo (RR) ou aplicar múltiplas filas (MLFQ).
-Concluindo neste cenário o tipo de escalonador não influencia de forma significativa o desempenho global.
+No cenário 1, todos os algoritmos apresentaram resultados muito semelhantes, com tempos médios de execução em torno de 26,6 segundos e tempos médios de resposta próximos de 11,6 segundos.
+Isto ocorre porque as tarefas possuem durações semelhantes e chegam quase simultaneamente, não havendo diferenças significativas entre executá-las por ordem de chegada (FIFO), escolher a mais curta primeiro (SJF), alternar com um intervalo de tempo fixo (RR) ou utilizar múltiplas filas (MLFQ).
+Concluindo neste cenário, o método de agendamento das tarefas não impacta de forma relevante o desempenho geral.
 
 No cenário 2, observa-se uma maior diferenciação entre os algoritmos. O SJF apresentou o menor tempo médio de resposta (≈ 13,3s), evidenciando a sua eficácia ao priorizar processos mais curtos. Tanto o FIFO como o RR mostraram desempenhos muito semelhantes entre si, com tempos de execução entre 26,6s e 28,3s e respostas médias em torno de 11,6s a 13,3s.
 Por outro lado, o MLFQ obteve resultados claramente superiores em tempo de execução (≈ 37,8s) e em tempo de resposta (≈ 22,8s), o que indica que, neste cenário específico, a sua política de múltiplas filas e penalização de processos longos aumentou a espera média dos processos.
