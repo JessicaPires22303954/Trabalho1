@@ -1,6 +1,6 @@
 Jéssica Pires -a22303954
 
-Link do repositório: https://github.com/JessicaPires22303954/Trabalho1
+Link do repositório: https://github.com/JessicaPires22303954/Trabalho1_Jessica_Pires-a22303954
 
 | Aplicação | Métrica (segs) | FIFO   | SJF    | RR     | MLFQ   |
 |-----------|----------------|--------|--------|--------|--------|
